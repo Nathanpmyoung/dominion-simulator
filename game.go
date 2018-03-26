@@ -2,6 +2,7 @@ package main
 
 import "fmt"
 import "math/rand"
+import "time"
 
 func sumSlices(x[]int) int {
 	totalx := 0
@@ -45,8 +46,10 @@ func draw(number int, hand []int, deck []int, discard []int) ([]int, []int, []in
 
 func main() {
 
+rand.Seed(time.Now().UTC().UnixNano())
+
     totalturns := 0
-    n := 10000
+    n := 1000000
     for i := 0; i < n; i++ {
 		turns := 0
 		hand := make([]int, 0, 0)
@@ -72,5 +75,5 @@ func main() {
     }
 
 	averageturns := float64(totalturns)/float64(n)
-    fmt.Println("Total turns:", averageturns)
+    fmt.Println("Total turns:", totalturns, "n:", n, "Average turns:", averageturns)
 }
