@@ -45,19 +45,32 @@ func draw(number int, hand []int, deck []int, discard []int) ([]int, []int, []in
 
 func main() {
 
-    totals := make([]float64,10,10)
-    n := 1000000
+    totalturns := 0
+    n := 10000
     for i := 0; i < n; i++ {
-        hand := make([]int, 0, 0)
-        deck := make([]int, 0, 0)
-        discard := []int{1,1,1,1,1,1,1,0,0,0,3,3}
+		turns := 0
+		hand := make([]int, 0, 0)
+		deck := make([]int, 0, 0)
+		discard := []int{1,1,1,1,1,1,1,0,0,0}
+		//fmt.Println(hand, deck, discard)
+		for provinces := 0; provinces < 5; {
+			turns ++
+	        hand, deck, discard = draw(5, hand, deck, discard)
+	        if sumSlices(hand) > 7 {
+				provinces ++
+				discard = append([]int{0}, discard...)
+			} else if sumSlices(hand) > 5 {
+				discard = append([]int{3}, discard...)
+			} else if sumSlices(hand) > 2 {
+			discard = append([]int{2}, discard...)
+			}
+	    	//fmt.Println(hand, deck, discard, provinces, turns)
+			discard = append(hand, discard...)
+			hand = nil
+		}
+		totalturns += turns
+    }
 
-        hand, deck, discard = draw(5, hand, deck, discard)
-        handtotal := sumSlices(hand)
-        totals[handtotal] += 1
-    }
-    for i := 0; i < len(totals); i++{
-        totals[i] = totals[i]/float64(n)
-    }
-    fmt.Println("Final", totals)
+	averageturns := float64(totalturns)/float64(n)
+    fmt.Println("Total turns:", averageturns)
 }
