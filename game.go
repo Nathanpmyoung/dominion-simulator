@@ -38,12 +38,34 @@ func shuffle(a []string) []string {
     return b
 }
 
-func lookThrough(name string,cards []string) bool {
+func lookThrough(name string,cards []string) int {
+	howMany := 0
 	for _, card := range cards {
 		if card == name {
-			return true
+			howMany += 1
 		}
 	}
+	return howMany
+}
+
+func smithyCondition(game Game) bool {
+
+	ratio := 0.2
+	decks := [][]string{
+		game.Hand,
+		game.InPlay,
+		game.Deck,
+		game.Discard,
+	}
+	totalCards := make([]string,0,0)
+	for _, c := range decks {
+    totalCards = append(totalCards, c...)
+	}
+	//fmt.Println("Total Cards:", len(totalCards), totalCards)
+	if lookThrough("Smithy", totalCards) < 10 && float64(lookThrough("Smithy", totalCards))/ float64(len(totalCards)) < ratio {
+		return true
+	}
+
 	return false
 }
 
@@ -83,7 +105,7 @@ rand.Seed(time.Now().UTC().UnixNano())
 		for provinces := 0; provinces < 5; {
 			turns ++
 	        game = draw(5, game)
-			if lookThrough("Smithy", game.Hand) {
+			if lookThrough("Smithy", game.Hand) > 0 {
 				//fmt.Println("Play Smithy:", game)
 				// put smithy in play game.Discard = append([]string{"Smithy"}, game.Discard...)
 				// remove Smithy from game.Hand
@@ -94,8 +116,10 @@ rand.Seed(time.Now().UTC().UnixNano())
 				game.Discard = append([]string{"Province"}, game.Discard...)
 			} else if sumCoins(game.Hand) > 5 {
 				game.Discard = append([]string{"Gold"}, game.Discard...)
-			} else if sumCoins(game.Hand) > 3 {
+			} else if sumCoins(game.Hand) > 3 && smithyCondition(game) {
 				game.Discard = append([]string{"Smithy"}, game.Discard...)
+				//If the card density is higher
+				//card totals?
 			} else if sumCoins(game.Hand) > 2 {
 				game.Discard = append([]string{"Silver"}, game.Discard...)
 			}
@@ -104,7 +128,7 @@ rand.Seed(time.Now().UTC().UnixNano())
 			game.Hand = nil
 		}
 		totalturns += turns
-		totalstdev += math.Pow((float64(turns)-21.773),2)
+		totalstdev += math.Pow((float64(turns)-18.15),2)
     }
 
 	averageturns := float64(totalturns)/float64(n)
