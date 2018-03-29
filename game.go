@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 import "math/rand"
-import "math"
+//import "math"
 import "time"
 
 type Game struct{
@@ -48,9 +48,8 @@ func lookThrough(name string,cards []string) int {
 	return howMany
 }
 
-func smithyCondition(game Game) bool {
+func smithyCondition(ratio float64,game Game) bool {
 
-	ratio := 0.2
 	decks := [][]string{
 		game.Hand,
 		game.InPlay,
@@ -71,6 +70,7 @@ func smithyCondition(game Game) bool {
 
 //draw function
 func draw(number int,game Game) (Game){
+
     for i := 0; i < number; i++ {
         if len(game.Deck) > 0 {
             game.Hand = append(game.Hand, game.Deck[:1]...)
@@ -89,13 +89,19 @@ func draw(number int,game Game) (Game){
     return game
 }
 
-func main() {
+/*
+func ratioCondition(minRatio [2]float64, midRatio [2]float64, maxRatio [2]float64, close float64) bool {
+	if (midRatio[1] - minRatio[1] < close) || (maxRatio[1] - midRatio[1] < close) {
+		return false
+	}
+	return true
+}
+*/
 
-rand.Seed(time.Now().UTC().UnixNano())
-
-    totalturns := 0
-	totalstdev := 0.0
-    n := 100000
+func fullGame(ratio float64) float64{
+	totalturns := 0
+	//totalstdev := 0.0
+	n := 100000
 	//strat := {"","","","Silver","Smithy","","Gold","","Province"}
 
 	for i := 0; i < n; i++ {
@@ -104,34 +110,103 @@ rand.Seed(time.Now().UTC().UnixNano())
 		//fmt.Println(game.Hand)
 		for provinces := 0; provinces < 5; {
 			turns ++
-	        game = draw(5, game)
+			game = draw(5, game)
 			if lookThrough("Smithy", game.Hand) > 0 {
 				//fmt.Println("Play Smithy:", game)
 				// put smithy in play game.Discard = append([]string{"Smithy"}, game.Discard...)
 				// remove Smithy from game.Hand
 				game = draw(3, game)
 			}
-	        if sumCoins(game.Hand) > 7 {
+			if sumCoins(game.Hand) > 7 {
 				provinces ++
 				game.Discard = append([]string{"Province"}, game.Discard...)
 			} else if sumCoins(game.Hand) > 5 {
 				game.Discard = append([]string{"Gold"}, game.Discard...)
-			} else if sumCoins(game.Hand) > 3 && smithyCondition(game) {
+			} else if sumCoins(game.Hand) > 3 && smithyCondition(ratio, game) {
 				game.Discard = append([]string{"Smithy"}, game.Discard...)
 				//If the card density is higher
 				//card totals?
 			} else if sumCoins(game.Hand) > 2 {
 				game.Discard = append([]string{"Silver"}, game.Discard...)
 			}
-	    	//fmt.Println(game)
+			//fmt.Println(game)
 			game.Discard = append(game.Hand, game.Discard...)
 			game.Hand = nil
 		}
 		totalturns += turns
-		totalstdev += math.Pow((float64(turns)-18.15),2)
-    }
+		//totalstdev += math.Pow((float64(turns)-18.15),2)
+	}
 
-	averageturns := float64(totalturns)/float64(n)
-	fullstdev := math.Pow((totalstdev/(float64(n)-1)),.5)
-    fmt.Println("Total turns:", totalturns, "n:", n, "Average turns:", averageturns, "Standard dev", fullstdev)
+	averageTurns := float64(totalturns)/float64(n)
+	//fullstdev := math.Pow((totalstdev/(float64(n)-1)),.5)
+	fmt.Println("Total turns:", totalturns, "n:", n, "Average turns:", averageTurns, "Ratio:", ratio)
+	return averageTurns
+}
+
+func main() {
+
+	rand.Seed(time.Now().UTC().UnixNano())
+
+	/*
+	minRatio := [2]float64{0.0, 0}
+	midRatio := [2]float64{0.25, 0}
+	maxRatio := [2]float64{0.5, 0}
+	//close := 0.1
+
+	minRatio[1] = fullGame(minRatio[0])
+	fmt.Println("minRatio:", minRatio)
+	midRatio[1] = fullGame(midRatio[0])
+	fmt.Println("midRatio:", midRatio)
+	maxRatio[1] = fullGame(maxRatio[0])
+	fmt.Println("maxRatio:", maxRatio)
+
+	for i := 0; i < 50 ; i++ {
+
+		currentRatio := midRatio
+		if midRatio[0] - minRatio[0] == maxRatio[0] - midRatio[0] {
+			if minRatio[1] > maxRatio[1]{
+				currentRatio[0] = minRatio[0] + (midRatio[0] - minRatio[0]) * 0.5
+			}else{
+				currentRatio[0] = midRatio[0] + (maxRatio[0] - midRatio[0]) * 0.5
+			}
+		} else{
+			if midRatio[0] - minRatio[0] > maxRatio[0] - midRatio[0] {
+				currentRatio[0] = minRatio[0] + (midRatio[0] - minRatio[0]) * 0.5
+			}else{
+				currentRatio[0] = midRatio[0] + (maxRatio[0] - midRatio[0]) * 0.5
+			}
+		}
+
+		currentRatio[1] = fullGame(currentRatio[0])
+		fmt.Println("minRatio:", minRatio, "midRatio:", midRatio, "maxRatio:", maxRatio, "currentRatio:", currentRatio)
+
+		if currentRatio[0] < midRatio[0]{
+			if currentRatio[1] > minRatio[1]{
+				//fmt.Println("Error: minRatio:", minRatio, "midRatio:", midRatio, "maxRatio:", maxRatio, "currentRatio:", currentRatio)
+				//break
+			}else if currentRatio[1] < midRatio[1] {
+				maxRatio = midRatio
+				midRatio = [2]float64{currentRatio[0],currentRatio[1]}
+
+			}else{
+				minRatio = [2]float64{currentRatio[0],currentRatio[1]}
+			}
+		}else{
+			if currentRatio[1] > maxRatio[1]{
+
+				//fmt.Println("Error: minRatio:", minRatio, "midRatio:", midRatio, "maxRatio:", maxRatio, "currentRatio:", currentRatio)
+				//break
+			}else if currentRatio[1] < midRatio[1] {
+				minRatio = midRatio
+				midRatio = [2]float64{currentRatio[0],currentRatio[1]}
+			}else{
+				maxRatio = [2]float64{currentRatio[0],currentRatio[1]}
+			}
+		}
+	}
+	*/
+
+	for i := 0.0; i<100; i++{
+		fullGame(i/100)
+	}
 }
